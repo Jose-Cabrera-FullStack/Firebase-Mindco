@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/firestore';
-import 'firebase/compat/database';
 
 import './App.css';
-import firebaseConfig from './configFirebase';
+import saveUserData from './firebase/configFirebase';
 
 function App() {
   const [name, setName] = useState('');
@@ -53,41 +50,12 @@ function App() {
       return;
     }
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const firestoreDB = firebase.firestore(app);
-
-    const realtimeDB = firebase.database(app);
-
-    function saveUserInteraction(uid, interaction) {
-      realtimeDB.ref(`userInteractions/users/${uid}`).set(interaction);
+    try {
+      saveUserData(name, email, phone);
+    } catch (error) {
+      setError('Error: no se pudo guardar la información');
+      return;
     }
-
-
-    const date = firebase.firestore.FieldValue.serverTimestamp();
-
-    firestoreDB.collection('users').add({
-      name,
-      email,
-      phone,
-      date
-    })
-      .then(refDoc => {
-        const interaction = {
-          type: "submit",
-          timestamp: Date.now(),
-        };
-        saveUserInteraction(refDoc.id, interaction);
-        console.log('Document successfully written!', refDoc.id);
-      })
-      .catch(err => {
-        const interaction = {
-          type: "error",
-          timestamp: Date.now(),
-        };
-        saveUserInteraction("error", interaction);
-        console.error('Error adding document: ', err);
-        setError(err.message);
-      });
 
     setName('');
     setEmail('');
