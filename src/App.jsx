@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
-import './App.css'
+import 'firebase/compat/database';
+
+import './App.css';
 import firebaseConfig from './configFirebase';
 
 function App() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [error, setError] = useState('');
+  const [messageError, setError] = useState('');
 
   const clearError = setTimeoutClear(() => {
     setError('');
   }, 2000);
 
   useEffect(() => {
-    if (error !== '') {
+    if (messageError !== '') {
       clearError();
     }
-  }, [error, clearError]);
+  }, [messageError, clearError]);
 
   function setTimeoutClear(func, time) {
     const timeout = setTimeout(func, time);
@@ -52,22 +54,39 @@ function App() {
     }
 
     const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    const firestoreDB = firebase.firestore(app);
+
+    const realtimeDB = firebase.database(app);
+
+    function saveUserInteraction(uid, interaction) {
+      realtimeDB.ref(`userInteractions/users/${uid}`).set(interaction);
+    }
+
 
     const date = firebase.firestore.FieldValue.serverTimestamp();
 
-    db.collection('users').add({
+    firestoreDB.collection('users').add({
       name,
       email,
       phone,
       date
     })
       .then(refDoc => {
+        const interaction = {
+          type: "submit",
+          timestamp: Date.now(),
+        };
+        saveUserInteraction(refDoc.id, interaction);
         console.log('Document successfully written!', refDoc.id);
       })
-      .catch(error => {
-        console.error('Error adding document: ', error);
-        setError(error.message);
+      .catch(err => {
+        const interaction = {
+          type: "error",
+          timestamp: Date.now(),
+        };
+        saveUserInteraction("error", interaction);
+        console.error('Error adding document: ', err);
+        setError(err.message);
       });
 
     setName('');
@@ -92,7 +111,7 @@ function App() {
       </div>
       <button type="submit">Submit</button>
 
-      {error && <p>{error}</p>}
+      {messageError && <p>{messageError}</p>}
     </form>
   );
 };
