@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
-
+import 'firebase/compat/firestore';
+import 'firebase/compat/database';
+import { initializeApp } from 'firebase/app';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import './App.css';
-import saveUserData from './firebase/configFirebase';
+
+const app = initializeApp({
+  projectId: "mindco-df9af",
+  apiKey: "AIzaSyCoh8jK7yOCyNPmtRoc-33BQfjeUAeaa7A",
+  authDomain: "mindco-df9af.firebaseapp.com",
+});
+const functions = getFunctions(app);
+const saveUserData = httpsCallable(functions, 'saveUserData', {
+  headers: {
+    "Content-Type": "application/json"
+  }
+});
 
 function App() {
   const [name, setName] = useState('');
@@ -50,16 +64,21 @@ function App() {
       return;
     }
 
-    try {
-      saveUserData(name, email, phone);
-    } catch (error) {
-      setError('Error: no se pudo guardar la información');
-      return;
-    }
+    const data = {
+      name,
+      email,
+      phone
+    };
 
-    setName('');
-    setEmail('');
-    setPhone('');
+    saveUserData(JSON.stringify(data)).then((result) => {
+      console.log(result);
+      setName('');
+      setEmail('');
+      setPhone('');
+    }).catch((error) => {
+      console.log(error);
+      setError('Error: no se pudo guardar la información');
+    });
   }
 
   return (
