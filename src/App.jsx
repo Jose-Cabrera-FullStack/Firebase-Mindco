@@ -11,7 +11,7 @@ function App() {
 
   const clearError = setTimeoutClear(() => {
     setFormMessage('');
-  }, 3000);
+  }, 5000);
 
   useEffect(() => {
     if (formMessage !== '') {
